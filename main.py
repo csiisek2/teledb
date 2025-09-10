@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from telegram.ext import Application
 
 from bot.handlers import setup_handlers
-from bot.database import init_database
+from bot.database_postgres import init_database
 
 # 환경변수 로드
 load_dotenv()

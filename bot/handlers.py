@@ -8,7 +8,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters
 
-from .database import search_phone, add_phone_data, update_phone_data, delete_phone_data, log_query, get_stats, get_phone_summary
+from .database_postgres import search_phone, add_phone_data, update_phone_data, delete_phone_data, log_query, get_stats, get_phone_summary
 from .utils import is_admin, validate_phone_number, format_phone_number, clean_phone_number
 from .security import check_user_access, SecurityManager
 
