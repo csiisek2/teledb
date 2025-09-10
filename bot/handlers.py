@@ -676,7 +676,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             for i, result in enumerate(results, 1):
                 response += f"**{i}. {result['content']}**\n"
-                response += f"   📅 등록일: {result['created_at'][:19]}\n\n"
+                # datetime 객체를 문자열로 변환
+                created_at = result['created_at']
+                if hasattr(created_at, 'strftime'):
+                    # datetime 객체인 경우
+                    created_str = created_at.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    # 이미 문자열인 경우
+                    created_str = str(created_at)[:19]
+                response += f"   📅 등록일: {created_str}\n\n"
             
             response += "🗑️ *이 메시지는 30초 후 자동 삭제됩니다.*"
             
