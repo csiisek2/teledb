@@ -4,6 +4,7 @@ PostgreSQL 데이터베이스 연결 및 쿼리 처리
 """
 
 import psycopg
+import sqlite3
 import os
 import logging
 from datetime import datetime
@@ -14,15 +15,38 @@ logger = logging.getLogger(__name__)
 
 # PostgreSQL 연결 정보
 DATABASE_URL = os.getenv('DATABASE_URL', '')
+USE_SQLITE_FALLBACK = True  # 임시 SQLite 폴백 활성화
 
 def get_connection():
-    """PostgreSQL 연결 반환"""
+    """PostgreSQL 연결 반환 (SQLite 폴백 포함)"""
     try:
+        if not DATABASE_URL:
+            logger.warning("DATABASE_URL 환경변수가 설정되지 않음 - SQLite 사용")
+            if USE_SQLITE_FALLBACK:
+                return get_sqlite_connection()
+            raise ValueError("DATABASE_URL이 없습니다")
+        
+        logger.info(f"PostgreSQL 연결 시도: {DATABASE_URL[:50]}...")
         # psycopg3는 URL 직접 사용 가능
         conn = psycopg.connect(DATABASE_URL)
+        logger.info("PostgreSQL 연결 성공")
         return conn
     except Exception as e:
         logger.error(f"PostgreSQL 연결 오류: {e}")
+        if USE_SQLITE_FALLBACK:
+            logger.warning("PostgreSQL 실패 - SQLite 폴백 사용")
+            return get_sqlite_connection()
+        raise
+
+def get_sqlite_connection():
+    """SQLite 폴백 연결"""
+    try:
+        conn = sqlite3.connect('./teledb.sqlite')
+        conn.row_factory = sqlite3.Row  # dict-like access
+        logger.info("SQLite 폴백 연결 성공")
+        return conn
+    except Exception as e:
+        logger.error(f"SQLite 연결도 실패: {e}")
         raise
 
 def init_database():
