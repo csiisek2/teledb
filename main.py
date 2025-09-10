@@ -68,25 +68,38 @@ async def main():
     
     logger.info("텔레그램 봇이 시작됩니다...")
     
+    # 환경 확인 - Render에서는 웹훅, 로컬에서는 폴링
+    is_render = os.getenv('RENDER') is not None
+    
     try:
         # 봇 실행
         await application.start()
         
-        # 웹훅 방식으로 변경 (충돌 방지)
-        PORT = int(os.environ.get('PORT', 10000))
-        
-        # 웹훅 설정
-        webhook_url = f"https://teledb.onrender.com/{bot_token}"
-        await application.bot.set_webhook(url=webhook_url)
-        logger.info(f"웹훅 설정: {webhook_url}")
-        
-        # 웹훅으로 실행
-        await application.updater.start_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            url_path=bot_token,
-            webhook_url=webhook_url
-        )
+        if is_render:
+            # Render 환경: 웹훅 방식
+            PORT = int(os.environ.get('PORT', 10000))
+            webhook_url = f"https://teledb.onrender.com/{bot_token}"
+            
+            logger.info(f"Render 환경 감지 - 웹훅 모드로 시작")
+            logger.info(f"웹훅 URL: {webhook_url}")
+            
+            # 기존 웹훅 삭제 후 새로 설정
+            await application.bot.delete_webhook(drop_pending_updates=True)
+            await application.bot.set_webhook(url=webhook_url)
+            
+            # 웹훅으로 실행
+            await application.updater.start_webhook(
+                listen="0.0.0.0",
+                port=PORT,
+                url_path=bot_token,
+                webhook_url=webhook_url
+            )
+            
+            logger.info("웹훅 서버 시작 완료")
+        else:
+            # 로컬 환경: 폴링 방식
+            logger.info("로컬 환경 - 폴링 모드로 시작")
+            await application.updater.start_polling()
         
         # 종료 신호까지 대기
         import asyncio
