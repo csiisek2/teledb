@@ -48,12 +48,24 @@ def webhook(webhook_token):
         return "Forbidden", 403
     
     if application:
-        # 비동기 업데이트 처리
+        # 비동기 업데이트 처리 (Flask-safe)
         update_data = request.get_json()
         if update_data:
-            asyncio.create_task(process_update(update_data))
+            # 새 이벤트 루프에서 처리
+            import threading
+            threading.Thread(target=run_update_sync, args=(update_data,), daemon=True).start()
     
     return "OK", 200
+
+def run_update_sync(update_data):
+    """동기 환경에서 비동기 업데이트 처리"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(process_update(update_data))
+        loop.close()
+    except Exception as e:
+        logger.error(f"업데이트 처리 중 오류: {e}")
 
 async def process_update(update_data):
     """업데이트 비동기 처리"""
