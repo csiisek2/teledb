@@ -739,6 +739,49 @@ async def safe_delete_message(message):
     except Exception:
         pass  # 삭제 실패해도 에러 무시
 
+async def init_sample_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """샘플 데이터 초기화 (슈퍼어드민 전용)"""
+    user = update.effective_user
+    
+    if user.id != int(ADMIN_USER_ID):
+        await update.message.reply_text("❓ 알 수 없는 명령어입니다.")
+        return
+    
+    await update.message.reply_text("🔄 샘플 데이터 초기화 중...")
+    
+    try:
+        # 샘플 데이터 5개 추가
+        sample_numbers = [
+            ("01092999998", "김철수 - 삼성전자 개발팀"),
+            ("01012345678", "이영희 - LG전자 마케팅부"),  
+            ("01087654321", "박민수 - 현대자동차 디자인센터"),
+            ("01055556666", "최지연 - 네이버 AI연구소"),
+            ("01099998888", "김대한 - 카카오 서비스개발팀"),
+        ]
+        
+        added_count = 0
+        for phone, content in sample_numbers:
+            success = add_phone_data(phone, content)
+            if success:
+                added_count += 1
+        
+        await update.message.reply_text(
+            f"✅ **샘플 데이터 초기화 완료**\n\n"
+            f"📊 추가된 레코드: {added_count}개\n\n"
+            f"🧪 **테스트용 전화번호:**\n"
+            f"• `01092999998` - 김철수 (삼성전자)\n"
+            f"• `01012345678` - 이영희 (LG전자)\n"  
+            f"• `01087654321` - 박민수 (현대자동차)\n"
+            f"• `01055556666` - 최지연 (네이버)\n"
+            f"• `01099998888` - 김대한 (카카오)\n\n"
+            f"💡 위 번호들로 조회 테스트를 해보세요!",
+            parse_mode='Markdown'
+        )
+        
+    except Exception as e:
+        logger.error(f"샘플 데이터 초기화 오류: {e}")
+        await update.message.reply_text(f"❌ 샘플 데이터 초기화 실패: {e}")
+
 def setup_handlers(application):
     """핸들러 설정"""
     # 명령어 핸들러
@@ -769,6 +812,7 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("admin", admin_user_command))
     application.add_handler(CommandHandler("unadmin", unadmin_user_command))
     application.add_handler(CommandHandler("admins", list_admins_command))
+    application.add_handler(CommandHandler("init_sample", init_sample_data_command))
     
     # 일반 메시지 핸들러
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
