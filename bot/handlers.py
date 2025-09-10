@@ -782,6 +782,65 @@ async def init_sample_data_command(update: Update, context: ContextTypes.DEFAULT
         logger.error(f"샘플 데이터 초기화 오류: {e}")
         await update.message.reply_text(f"❌ 샘플 데이터 초기화 실패: {e}")
 
+async def manual_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """수동 데이터 추가 (슈퍼어드민 전용)"""
+    user = update.effective_user
+    
+    if user.id != int(ADMIN_USER_ID):
+        await update.message.reply_text("❓ 알 수 없는 명령어입니다.")
+        return
+    
+    # 사용법 체크
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text(
+            "📝 **수동 데이터 추가**\n\n"
+            "사용법: `/manual_add 전화번호 내용`\n\n"
+            "예시:\n"
+            "`/manual_add 01092999998 김철수-삼성전자`\n"
+            "`/manual_add 01012345678 이영희-LG전자`",
+            parse_mode='Markdown'
+        )
+        return
+    
+    phone_number = context.args[0]
+    content = ' '.join(context.args[1:])
+    
+    try:
+        # 전화번호 정리
+        cleaned_phone = clean_phone_number(phone_number)
+        if not validate_phone_number(cleaned_phone):
+            await update.message.reply_text(f"❌ 올바르지 않은 전화번호: {phone_number}")
+            return
+        
+        await update.message.reply_text(f"🔄 데이터 추가 중: {cleaned_phone}")
+        
+        # 데이터베이스에 추가
+        success = add_phone_data(cleaned_phone, content)
+        
+        if success:
+            # 추가 확인
+            verify_results = search_phone(cleaned_phone)
+            formatted_phone = format_phone_number(cleaned_phone)
+            
+            await update.message.reply_text(
+                f"✅ **데이터 추가 성공**\n\n"
+                f"📱 전화번호: `{formatted_phone}`\n"
+                f"📝 내용: {content}\n"
+                f"🔍 확인: {len(verify_results)}개 레코드 존재\n\n"
+                f"💡 `{formatted_phone}` 로 조회 테스트 해보세요!",
+                parse_mode='Markdown'
+            )
+        else:
+            await update.message.reply_text(
+                f"❌ **데이터 추가 실패**\n\n"
+                f"데이터베이스 연결 문제일 수 있습니다.\n"
+                f"Render 로그를 확인해주세요."
+            )
+        
+    except Exception as e:
+        logger.error(f"수동 데이터 추가 오류: {e}")
+        await update.message.reply_text(f"❌ 데이터 추가 중 오류 발생: {e}")
+
 def setup_handlers(application):
     """핸들러 설정"""
     # 명령어 핸들러
@@ -813,6 +872,7 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("unadmin", unadmin_user_command))
     application.add_handler(CommandHandler("admins", list_admins_command))
     application.add_handler(CommandHandler("init_sample", init_sample_data_command))
+    application.add_handler(CommandHandler("manual_add", manual_add_command))
     
     # 일반 메시지 핸들러
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
