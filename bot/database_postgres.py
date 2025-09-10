@@ -124,7 +124,12 @@ def search_phone(phone_number: str) -> List[Dict]:
                     ''', (phone_number,))
                 
                 results = cursor.fetchall()
-                return [dict(result) for result in results] if results else []
+                if results:
+                    # PostgreSQL 결과를 dict로 변환
+                    columns = [desc[0] for desc in cursor.description]
+                    return [dict(zip(columns, row)) for row in results]
+                else:
+                    return []
     except Exception as e:
         logger.error(f"전화번호 조회 중 오류: {e}")
         # 긴급 테스트용 더미 데이터
