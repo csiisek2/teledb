@@ -681,19 +681,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response += "🗑️ *이 메시지는 30초 후 자동 삭제됩니다.*"
             
             sent_msg = await update.message.reply_text(response, parse_mode='Markdown')
-            # 응답 메시지와 사용자 입력 메시지 모두 30초 후 자동 삭제
+            # 응답 메시지와 사용자 입력 메시지 동시 삭제
             import asyncio
-            asyncio.create_task(delete_message_after_delay(sent_msg, 30))
-            # 그룹과 1대1 모두에서 사용자 입력 메시지 삭제
-            asyncio.create_task(delete_message_after_delay(update.message, 30))
+            asyncio.create_task(delete_messages_simultaneously([sent_msg, update.message], 30))
         else:
             formatted_phone = format_phone_number(cleaned_phone)
             sent_msg = await update.message.reply_text(f"❌ 전화번호 `{formatted_phone}`에 대한 정보를 찾을 수 없습니다.\n\n🗑️ *이 메시지는 30초 후 자동 삭제됩니다.*", parse_mode='Markdown')
-            # 응답 메시지와 사용자 입력 메시지 모두 30초 후 자동 삭제
+            # 응답 메시지와 사용자 입력 메시지 동시 삭제
             import asyncio
-            asyncio.create_task(delete_message_after_delay(sent_msg, 30))
-            # 그룹과 1대1 모두에서 사용자 입력 메시지 삭제
-            asyncio.create_task(delete_message_after_delay(update.message, 30))
+            asyncio.create_task(delete_messages_simultaneously([sent_msg, update.message], 30))
     else:
         await update.message.reply_text("❓ 전화번호를 입력해주세요. 예: `01012345678`", parse_mode='Markdown')
 
@@ -706,6 +702,26 @@ async def delete_message_after_delay(message, delay_seconds):
         await message.delete()
     except:
         pass
+
+async def delete_messages_simultaneously(messages, delay_seconds):
+    """여러 메시지를 정확히 동시에 삭제"""
+    import asyncio
+    await asyncio.sleep(delay_seconds)
+    
+    # 모든 메시지를 동시에 삭제
+    delete_tasks = []
+    for message in messages:
+        delete_tasks.append(asyncio.create_task(safe_delete_message(message)))
+    
+    # 모든 삭제 작업을 동시에 실행
+    await asyncio.gather(*delete_tasks, return_exceptions=True)
+
+async def safe_delete_message(message):
+    """안전한 메시지 삭제"""
+    try:
+        await message.delete()
+    except Exception:
+        pass  # 삭제 실패해도 에러 무시
 
 def setup_handlers(application):
     """핸들러 설정"""
