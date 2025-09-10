@@ -3,8 +3,7 @@ PostgreSQL 데이터베이스 연결 및 쿼리 처리
 구조: phone_number + content (중복 허용)
 """
 
-import psycopg2
-import psycopg2.extras
+import psycopg
 import os
 import logging
 from datetime import datetime
@@ -19,15 +18,8 @@ DATABASE_URL = os.getenv('DATABASE_URL', '')
 def get_connection():
     """PostgreSQL 연결 반환"""
     try:
-        # DATABASE_URL 파싱
-        url = urlparse.urlparse(DATABASE_URL)
-        conn = psycopg2.connect(
-            database=url.path[1:],  # Remove leading slash
-            user=url.username,
-            password=url.password,
-            host=url.hostname,
-            port=url.port
-        )
+        # psycopg3는 URL 직접 사용 가능
+        conn = psycopg.connect(DATABASE_URL)
         return conn
     except Exception as e:
         logger.error(f"PostgreSQL 연결 오류: {e}")
@@ -74,7 +66,7 @@ def search_phone(phone_number: str) -> List[Dict]:
     """전화번호로 모든 매칭 정보 조회 (중복 허용)"""
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            with conn.cursor() as cursor:
                 cursor.execute('''
                     SELECT * FROM phone_data 
                     WHERE phone_number = %s
@@ -169,7 +161,7 @@ def get_stats() -> Dict:
     """데이터베이스 통계 반환"""
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            with conn.cursor() as cursor:
                 
                 # 총 등록된 데이터 수
                 cursor.execute('SELECT COUNT(*) as total FROM phone_data')
@@ -202,7 +194,7 @@ def get_phone_summary() -> List[Dict]:
     """전화번호별 요약 정보 (중복 수 포함)"""
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            with conn.cursor() as cursor:
                 cursor.execute('''
                     SELECT phone_number, COUNT(*) as count, 
                            MIN(created_at) as first_added,
