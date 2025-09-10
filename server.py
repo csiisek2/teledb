@@ -62,10 +62,27 @@ def run_update_sync(update_data):
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
+        # 업데이트 처리 전에 약간 대기
+        loop.run_until_complete(asyncio.sleep(0.1))
         loop.run_until_complete(process_update(update_data))
-        loop.close()
+        
+        # 모든 태스크가 완료될 때까지 대기
+        pending = asyncio.all_tasks(loop)
+        if pending:
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        
+        # 짧은 대기 후 루프 종료
+        loop.run_until_complete(asyncio.sleep(0.5))
+        
     except Exception as e:
         logger.error(f"업데이트 처리 중 오류: {e}")
+    finally:
+        try:
+            if loop and not loop.is_closed():
+                loop.close()
+        except:
+            pass
 
 async def process_update(update_data):
     """업데이트 비동기 처리"""
