@@ -71,7 +71,22 @@ async def main():
     try:
         # 봇 실행
         await application.start()
-        await application.updater.start_polling()
+        
+        # 웹훅 방식으로 변경 (충돌 방지)
+        PORT = int(os.environ.get('PORT', 10000))
+        
+        # 웹훅 설정
+        webhook_url = f"https://teledb.onrender.com/{bot_token}"
+        await application.bot.set_webhook(url=webhook_url)
+        logger.info(f"웹훅 설정: {webhook_url}")
+        
+        # 웹훅으로 실행
+        await application.updater.start_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=bot_token,
+            webhook_url=webhook_url
+        )
         
         # 종료 신호까지 대기
         import asyncio
