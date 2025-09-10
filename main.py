@@ -24,6 +24,18 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """메인 함수"""
+    
+    # 환경변수 디버그 정보
+    logger.info("=== 환경변수 디버그 정보 ===")
+    logger.info(f"BOT_TOKEN 존재: {bool(os.getenv('BOT_TOKEN'))}")
+    logger.info(f"DATABASE_URL 존재: {bool(os.getenv('DATABASE_URL'))}")
+    if os.getenv('DATABASE_URL'):
+        db_url = os.getenv('DATABASE_URL')
+        # 보안을 위해 앞 20자, 뒤 10자만 표시
+        masked_url = db_url[:20] + "***" + db_url[-10:] if len(db_url) > 30 else db_url
+        logger.info(f"DATABASE_URL 형태: {masked_url}")
+    logger.info("========================")
+    
     # 봇 토큰 확인
     bot_token = os.getenv('BOT_TOKEN')
     if not bot_token:
@@ -31,7 +43,12 @@ async def main():
         return
     
     # 데이터베이스 초기화
-    init_database()
+    try:
+        init_database()
+        logger.info("데이터베이스 초기화 성공")
+    except Exception as e:
+        logger.error(f"데이터베이스 초기화 실패: {e}")
+        # 계속 진행 - 폴백으로 작동
     
     # 텔레그램 애플리케이션 생성
     application = Application.builder().token(bot_token).build()

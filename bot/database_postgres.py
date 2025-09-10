@@ -19,6 +19,11 @@ USE_SQLITE_FALLBACK = True  # 임시 SQLite 폴백 활성화
 
 def get_connection():
     """PostgreSQL 연결 반환 (SQLite 폴백 포함)"""
+    logger.info(f"=== 데이터베이스 연결 디버그 ===")
+    logger.info(f"DATABASE_URL 길이: {len(DATABASE_URL) if DATABASE_URL else 0}")
+    logger.info(f"DATABASE_URL 시작: {DATABASE_URL[:30] if DATABASE_URL else 'None'}")
+    logger.info(f"USE_SQLITE_FALLBACK: {USE_SQLITE_FALLBACK}")
+    
     try:
         if not DATABASE_URL:
             logger.warning("DATABASE_URL 환경변수가 설정되지 않음 - SQLite 사용")
@@ -27,12 +32,25 @@ def get_connection():
             raise ValueError("DATABASE_URL이 없습니다")
         
         logger.info(f"PostgreSQL 연결 시도: {DATABASE_URL[:50]}...")
+        
+        # 연결 전 URL 유효성 검사
+        if not DATABASE_URL.startswith(('postgresql://', 'postgres://')):
+            logger.error(f"잘못된 DATABASE_URL 형태: {DATABASE_URL[:30]}")
+            raise ValueError("DATABASE_URL이 올바른 PostgreSQL URL 형태가 아닙니다")
+        
         # psycopg3는 URL 직접 사용 가능
         conn = psycopg.connect(DATABASE_URL)
         logger.info("PostgreSQL 연결 성공")
+        
+        # 연결 테스트
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            result = cursor.fetchone()
+            logger.info(f"PostgreSQL 테스트 쿼리 결과: {result}")
+        
         return conn
     except Exception as e:
-        logger.error(f"PostgreSQL 연결 오류: {e}")
+        logger.error(f"PostgreSQL 연결 오류: {type(e).__name__}: {e}")
         if USE_SQLITE_FALLBACK:
             logger.warning("PostgreSQL 실패 - SQLite 폴백 사용")
             return get_sqlite_connection()
