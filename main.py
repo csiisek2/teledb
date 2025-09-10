@@ -56,6 +56,13 @@ async def main():
     # 애플리케이션 초기화 (Python 3.13 호환성)
     await application.initialize()
     
+    # 웹훅 삭제 (충돌 해결용)
+    try:
+        await application.bot.delete_webhook(drop_pending_updates=True)
+        logger.info("웹훅 삭제 완료 - 충돌 문제 해결")
+    except Exception as e:
+        logger.warning(f"웹훅 삭제 실패: {e}")
+    
     # 핸들러 설정
     setup_handlers(application)
     
