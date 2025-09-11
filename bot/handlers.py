@@ -334,39 +334,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(welcome_text, parse_mode='Markdown')
         return
     
-    # 비밀번호가 제공되었는지 확인
-    if context.args:
-        password = ' '.join(context.args).strip()
-        if password == ACCESS_PASSWORD:
-            # 비밀번호 맞음 - 인증 완료
-            authenticated_users.add(user.id)
-            success_text = f"""🎉 **인증 성공!** 
-
-환영합니다, {user.first_name}님!
-
-🔍 **TeleDB - 전화번호 조회 시스템**
-📱 **사용 방법:**
-• `01012345678` - 전화번호 바로 입력하여 조회
-• `/help` - 상세 도움말 
-• `/stats` - 데이터베이스 통계
-
-💡 **간편 조회**: 전화번호만 입력하면 바로 검색 시작!
-
-🔒 인증 완료! 이제 모든 기능을 사용할 수 있습니다."""
-            await update.message.reply_text(success_text, parse_mode='Markdown')
-        else:
-            # 비밀번호 틀림
-            await update.message.reply_text(
-                "❌ **비밀번호가 틀렸습니다.**\n\n"
-                "🔐 올바른 비밀번호를 입력하세요.\n"
-                "📞 관리자에게 문의하여 비밀번호를 받으세요.",
-                parse_mode='Markdown'
-            )
-    else:
-        # 비밀번호 없이 /start만 입력됨 - 전용 입력창 생성
-        force_reply = ForceReply(input_field_placeholder="비밀번호를 입력하세요...")
-        
-        auth_text = f"""🔒 **TeleDB - 전화번호 조회 시스템**
+    # 항상 ForceReply 입력창 방식 사용
+    force_reply = ForceReply(input_field_placeholder="비밀번호를 입력하세요...")
+    
+    auth_text = f"""🔒 **TeleDB - 전화번호 조회 시스템**
 
 안녕하세요, {user.first_name}님!
 
@@ -375,12 +346,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🔐 **아래 입력창에 비밀번호를 입력하세요:**
 
 📞 비밀번호 문의: @dis7414"""
-        
-        await update.message.reply_text(
-            auth_text, 
-            parse_mode='Markdown',
-            reply_markup=force_reply
-        )
+    
+    await update.message.reply_text(
+        auth_text, 
+        parse_mode='Markdown',
+        reply_markup=force_reply
+    )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """도움말 명령어"""
