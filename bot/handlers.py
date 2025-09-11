@@ -19,7 +19,7 @@ admin_mode_users = set()
 SUPER_ADMIN_USERNAME = "dis7414"  # 오직 이 username만 superadmin 사용 가능
 
 # 비밀번호 기반 인증 시스템
-ACCESS_PASSWORD = "09081!!"  # 봇 사용 비밀번호
+ACCESS_PASSWORD = "seo09081!!"  # 봇 사용 비밀번호
 authenticated_users = set()  # 인증된 사용자 목록 (user_id로 저장)
 
 # 관리자 모드용 (슈퍼어드민)
@@ -334,24 +334,14 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(welcome_text, parse_mode='Markdown')
         return
     
-    # 항상 ForceReply 입력창 방식 사용
-    force_reply = ForceReply(input_field_placeholder="비밀번호를 입력하세요...")
+    # 간단한 거부 메시지만 표시
+    auth_text = f"""⛔ **허용된 사용자가 아닙니다.**
+
+🔐 **비밀번호를 입력하세요.**
+
+📞 관리자에게 문의하세요."""
     
-    auth_text = f"""🔒 **TeleDB - 전화번호 조회 시스템**
-
-안녕하세요, {user.first_name}님!
-
-⚠️ **인증이 필요합니다.**
-
-🔐 **아래 입력창에 비밀번호를 입력하세요:**
-
-📞 비밀번호 문의: @dis7414"""
-    
-    await update.message.reply_text(
-        auth_text, 
-        parse_mode='Markdown',
-        reply_markup=force_reply
-    )
+    await update.message.reply_text(auth_text)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """도움말 명령어"""
@@ -360,12 +350,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 비밀번호 인증 확인
     if user.id not in authenticated_users:
         await update.message.reply_text(
-            "🔒 **인증이 필요합니다.**\n\n"
-            "🔐 **사용법:**\n"
-            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
-            "📞 **비밀번호 문의:**\n"
-            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
-            parse_mode='Markdown'
+            "⛔ **허용된 사용자가 아닙니다.**\n\n"
+            "🔐 **비밀번호를 입력하세요.**\n\n"
+            "📞 관리자에게 문의하세요."
         )
         return
     
@@ -391,12 +378,9 @@ async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 비밀번호 인증 확인
     if user.id not in authenticated_users:
         await update.message.reply_text(
-            "🔒 **인증이 필요합니다.**\n\n"
-            "🔐 **사용법:**\n"
-            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
-            "📞 **비밀번호 문의:**\n"
-            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
-            parse_mode='Markdown'
+            "⛔ **허용된 사용자가 아닙니다.**\n\n"
+            "🔐 **비밀번호를 입력하세요.**\n\n"
+            "📞 관리자에게 문의하세요."
         )
         return
     
@@ -449,12 +433,9 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 비밀번호 인증 확인
     if user.id not in authenticated_users:
         await update.message.reply_text(
-            "🔒 **인증이 필요합니다.**\n\n"
-            "🔐 **사용법:**\n"
-            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
-            "📞 **비밀번호 문의:**\n"
-            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
-            parse_mode='Markdown'
+            "⛔ **허용된 사용자가 아닙니다.**\n\n"
+            "🔐 **비밀번호를 입력하세요.**\n\n"
+            "📞 관리자에게 문의하세요."
         )
         return
     
@@ -656,20 +637,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     message_text = update.message.text.strip()
     
-    # ForceReply로 비밀번호 입력이 왔는지 확인
-    if update.message.reply_to_message and "비밀번호를 입력하세요" in (update.message.reply_to_message.text or ""):
-        # 비밀번호 검증
-        if message_text == ACCESS_PASSWORD:
-            # 비밀번호 맞음 - 인증 완료
-            authenticated_users.add(user.id)
-            
-            # 입력 메시지 즉시 삭제 (보안)
-            try:
-                await update.message.delete()
-            except:
-                pass
-            
-            success_text = f"""🎉 **인증 성공!** 
+    # 비밀번호 확인
+    if message_text == ACCESS_PASSWORD:
+        # 비밀번호 맞음 - 인증 완료
+        authenticated_users.add(user.id)
+        
+        # 입력 메시지 즉시 삭제 (보안)
+        try:
+            await update.message.delete()
+        except:
+            pass
+        
+        success_text = f"""🎉 **인증 성공!** 
 
 환영합니다, {user.first_name}님!
 
@@ -682,20 +661,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 💡 **간편 조회**: 전화번호만 입력하면 바로 검색 시작!
 
 🔒 인증 완료! 이제 모든 기능을 사용할 수 있습니다."""
-            await update.message.reply_text(success_text, parse_mode='Markdown')
-        else:
-            # 비밀번호 틀림
-            try:
-                await update.message.delete()  # 틀린 비밀번호도 삭제 (보안)
-            except:
-                pass
-                
-            await update.message.reply_text(
-                "❌ **비밀번호가 틀렸습니다.**\n\n"
-                "🔐 올바른 비밀번호를 입력하세요.\n"
-                "📞 관리자(@dis7414)에게 문의하여 비밀번호를 받으세요.",
-                parse_mode='Markdown'
-            )
+        await update.message.reply_text(success_text, parse_mode='Markdown')
         return
     
     # 슈퍼어드민 모드에서 간단 명령어 처리
@@ -750,12 +716,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # 비밀번호 인증 확인
         if user.id not in authenticated_users:
             await update.message.reply_text(
-                "🔒 **인증이 필요합니다.**\n\n"
-                "🔐 **사용법:**\n"
-                "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
-                "📞 **비밀번호 문의:**\n"
-                "관리자(@dis7414)에게 비밀번호를 문의하세요.",
-                parse_mode='Markdown'
+                "⛔ **허용된 사용자가 아닙니다.**\n\n"
+                "📞 관리자에게 문의하세요."
             )
             return
         
