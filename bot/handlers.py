@@ -330,10 +330,10 @@ async def sa_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🔴 **관리자 모드 비활성화**\n일반 사용자 모드로 전환됩니다.", parse_mode='Markdown')
     else:
         admin_mode_users.add(user.id)
-        await update.message.reply_text("🟢 **관리자 모드 활성화**\n\n📝 **간단 명령어:**\n• `전화번호 내용` - 정보 추가\n• `전화번호 d` - 정보 삭제\n• `/비번확인` - 현재 비밀번호 확인\n• `/비번변경 새비밀번호` - 비밀번호 변경\n\n⚡ **예시:** `01012345678 홍길동`", parse_mode='Markdown')
+        await update.message.reply_text("🟢 **관리자 모드 활성화**\n\n📝 **간단 명령어:**\n• `전화번호 내용` - 정보 추가\n• `전화번호 d` - 정보 삭제\n• `/pass` - 현재 비밀번호 확인\n• `/pass 새비밀번호` - 비밀번호 변경\n\n⚡ **예시:** `01012345678 홍길동`", parse_mode='Markdown')
 
-async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """비밀번호 변경 명령어 (슈퍼어드민 전용)"""
+async def pass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """비밀번호 확인/변경 명령어 (슈퍼어드민 전용)"""
     global ACCESS_PASSWORD
     user = update.effective_user
     
@@ -343,15 +343,24 @@ async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
     
     if not context.args:
-        await update.message.reply_text(
-            "🔐 **비밀번호 변경**\n\n"
-            "**사용법:** `/비번변경 새비밀번호`\n"
-            "**예시:** `/비번변경 newpass123`\n\n"
-            "💡 현재 비밀번호 확인: `/비번확인`",
-            parse_mode='Markdown'
-        )
+        # 비밀번호 확인
+        check_text = f"""🔐 **현재 비밀번호**
+
+**비밀번호:** `{ACCESS_PASSWORD}`
+
+📝 **변경하려면:** `/pass 새비밀번호`
+⚡ **예시:** `/pass hello123`
+
+⚠️ **이 메시지는 10초 후 자동 삭제됩니다.**"""
+        
+        sent_msg = await update.message.reply_text(check_text, parse_mode='Markdown')
+        
+        # 10초 후 삭제
+        import asyncio
+        asyncio.create_task(delete_message_after_delay(sent_msg, 10))
         return
     
+    # 비밀번호 변경
     new_password = ' '.join(context.args).strip()
     
     # 비밀번호 검증
@@ -383,29 +392,6 @@ async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 ⚠️ **이 메시지는 10초 후 자동 삭제됩니다.**"""
     
     sent_msg = await update.message.reply_text(success_text, parse_mode='Markdown')
-    
-    # 10초 후 삭제
-    import asyncio
-    asyncio.create_task(delete_message_after_delay(sent_msg, 10))
-
-async def checkpass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """현재 비밀번호 확인 명령어 (슈퍼어드민 전용)"""
-    user = update.effective_user
-    
-    # 슈퍼어드민만 사용 가능
-    if user.id != SUPER_ADMIN_USER_ID:
-        await update.message.reply_text("❓ 알 수 없는 명령어입니다.")
-        return
-    
-    check_text = f"""🔐 **현재 비밀번호**
-
-**비밀번호:** `{ACCESS_PASSWORD}`
-
-📝 변경하려면: `/비번변경 새비밀번호`
-
-⚠️ **이 메시지는 10초 후 자동 삭제됩니다.**"""
-    
-    sent_msg = await update.message.reply_text(check_text, parse_mode='Markdown')
     
     # 10초 후 삭제
     import asyncio
@@ -1017,8 +1003,7 @@ def setup_handlers(application):
     
     # 비밀 관리자 모드 핸들러 (짧은 명령어)
     application.add_handler(CommandHandler("sa", sa_command))  # /sa로 간단하게
-    application.add_handler(CommandHandler("비번확인", checkpass_command))  # 비밀번호 확인
-    application.add_handler(CommandHandler("비번변경", changepass_command))  # 비밀번호 변경
+    application.add_handler(CommandHandler("pass", pass_command))  # 비밀번호 확인/변경
     
     # 사용자 승인 관련 핸들러 (dis7414 전용) - 영어 명령어만 사용
     application.add_handler(CommandHandler("approve", approve_user_command))
