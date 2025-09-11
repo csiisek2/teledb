@@ -718,16 +718,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     message_text = update.message.text.strip()
     
-    # 비밀번호 확인
+    # 비밀번호 확인 (디버그 로그 추가)
+    logger.info(f"메시지 처리: 사용자 {user.id}, 입력: '{message_text}', 현재 비밀번호: '{ACCESS_PASSWORD}'")
+    logger.info(f"비밀번호 매치: {message_text == ACCESS_PASSWORD}")
+    logger.info(f"현재 인증된 사용자: {authenticated_users}")
+    
     if message_text == ACCESS_PASSWORD:
         # 비밀번호 맞음 - 인증 완료
         authenticated_users.add(user.id)
+        logger.info(f"사용자 {user.id} 인증 성공! 인증된 사용자 목록: {authenticated_users}")
         
         # 입력 메시지 즉시 삭제 (보안)
         try:
             await update.message.delete()
-        except:
-            pass
+            logger.info(f"비밀번호 메시지 삭제 성공")
+        except Exception as e:
+            logger.error(f"메시지 삭제 실패: {e}")
         
         success_text = f"""🎉 **인증 성공!** 
 
@@ -743,6 +749,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 🔒 인증 완료! 이제 모든 기능을 사용할 수 있습니다."""
         await update.message.reply_text(success_text, parse_mode='Markdown')
+        logger.info(f"인증 성공 메시지 전송 완료")
         return
     
     # 슈퍼어드민 모드에서 간단 명령어 처리
