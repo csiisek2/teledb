@@ -798,6 +798,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user.id not in authenticated_users:
             await update.message.reply_text(
                 "⛔ **허용된 사용자가 아닙니다.**\n\n"
+                "🔐 **비밀번호를 입력하세요.**\n\n"
                 "📞 관리자에게 문의하세요."
             )
             return
