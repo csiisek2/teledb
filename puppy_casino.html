@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐕 Puppy Casino - 강아지들의 카지노</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* 헤더 */
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-menu a:hover {
+            color: #FFD700;
+        }
+
+        .login-btn {
+            background: #FFD700;
+            color: black;
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        /* 히어로 섹션 */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="30">🐕</text></svg>') repeat;
+            opacity: 0.1;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: black;
+            padding: 1rem 3rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        /* 강아지 캐릭터들 */
+        .mascots {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .mascot {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .mascot:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .mascot-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .mascot h3 {
+            color: #FFD700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 게임 섹션 */
+        .games {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4rem 2rem;
+        }
+
+        .games-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .games h2 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            color: #FFD700;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .game-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.1));
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: scale(1.05);
+            border-color: #FFD700;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .game-card h3 {
+            color: #FFD700;
+            margin-bottom: 1rem;
+        }
+
+        .play-btn {
+            background: #FFD700;
+            color: black;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .play-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        /* 보너스 섹션 */
+        .bonus {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+        }
+
+        .bonus h2 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #FFD700;
+        }
+
+        .bonus-cards {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .bonus-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            min-width: 250px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .bonus-card:hover {
+            border-color: #FFD700;
+            transform: translateY(-5px);
+        }
+
+        .bonus-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 푸터 */
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 3rem 2rem 1rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: #FFD700;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            display: block;
+            margin: 0.5rem 0;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #FFD700;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 1rem;
+            opacity: 0.6;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .mascots {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+        }
+
+        /* 애니메이션 효과 */
+        .sparkle {
+            position: absolute;
+            font-size: 1rem;
+            color: #FFD700;
+            animation: sparkle 3s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* 슬롯머신 애니메이션 */
+        .slot-reel {
+            display: inline-block;
+            animation: spin 0.5s infinite linear;
+        }
+
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">🐕 Puppy Casino</div>
+            <ul class="nav-menu">
+                <li><a href="#games">게임</a></li>
+                <li><a href="#bonus">보너스</a></li>
+                <li><a href="#about">소개</a></li>
+                <li><a href="#contact">문의</a></li>
+            </ul>
+            <button class="login-btn">로그인 🐾</button>
+        </nav>
+    </header>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero">
+        <div class="sparkle" style="top: 20%; left: 10%;">✨</div>
+        <div class="sparkle" style="top: 30%; right: 15%; animation-delay: 1s;">⭐</div>
+        <div class="sparkle" style="top: 60%; left: 20%; animation-delay: 2s;">💫</div>
+        
+        <div class="hero-content">
+            <h1>🎰 멍멍 카지노 🎰</h1>
+            <p>세상에서 가장 귀여운 강아지들과 함께하는 특별한 카지노 경험!</p>
+            <button class="cta-button" onclick="playBark()">지금 플레이 시작! 🎲</button>
+        </div>
+
+        <!-- 마스코트 캐릭터들 -->
+        <div class="mascots">
+            <div class="mascot">
+                <span class="mascot-emoji">🐕‍🦺</span>
+                <h3>럭키</h3>
+                <p>행운의 골든 리트리버</p>
+            </div>
+            <div class="mascot">
+                <span class="mascot-emoji">🐩</span>
+                <h3>다이아</h3>
+                <p>우아한 푸들 딜러</p>
+            </div>
+            <div class="mascot">
+                <span class="mascot-emoji">🐕</span>
+                <h3>잭팟</h3>
+                <p>승부욕 넘치는 시바견</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 게임 섹션 -->
+    <section class="games" id="games">
+        <div class="games-container">
+            <h2>🎮 인기 게임들</h2>
+            <div class="games-grid">
+                <div class="game-card" onclick="playGame('slots')">
+                    <div class="game-icon">🎰</div>
+                    <h3>멍멍 슬롯머신</h3>
+                    <p>강아지 심볼로 잭팟을 노려보세요!</p>
+                    <button class="play-btn">플레이 🐾</button>
+                </div>
+                
+                <div class="game-card" onclick="playGame('blackjack')">
+                    <div class="game-icon">🃏</div>
+                    <h3>퍼피 블랙잭</h3>
+                    <p>귀여운 강아지 딜러와 21을 만들어보세요!</p>
+                    <button class="play-btn">플레이 🐾</button>
+                </div>
+                
+                <div class="game-card" onclick="playGame('roulette')">
+                    <div class="game-icon">🎯</div>
+                    <h3>도그 룰렛</h3>
+                    <p>강아지 발자국을 따라 행운을 찾아보세요!</p>
+                    <button class="play-btn">플레이 🐾</button>
+                </div>
+                
+                <div class="game-card" onclick="playGame('poker')">
+                    <div class="game-icon">🎴</div>
+                    <h3>바우 포커</h3>
+                    <p>최고의 패로 다른 강아지들을 이겨보세요!</p>
+                    <button class="play-btn">플레이 🐾</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 보너스 섹션 -->
+    <section class="bonus" id="bonus">
+        <h2>🎁 특별 보너스</h2>
+        <div class="bonus-cards">
+            <div class="bonus-card">
+                <div class="bonus-amount">🐕 100% 🐕</div>
+                <h3>웰컴 보너스</h3>
+                <p>첫 가입시 100% 매칭 보너스!</p>
+            </div>
+            
+            <div class="bonus-card">
+                <div class="bonus-amount">🦴 50개 🦴</div>
+                <h3>일일 간식</h3>
+                <p>매일 무료 스핀 50개 제공!</p>
+            </div>
+            
+            <div class="bonus-card">
+                <div class="bonus-amount">👑 VIP 👑</div>
+                <h3>멍멍 VIP</h3>
+                <p>특별한 VIP 혜택과 전용 이벤트!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer class="footer" id="contact">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>게임 안내</h3>
+                <a href="#">게임 규칙</a>
+                <a href="#">확률 정보</a>
+                <a href="#">책임감 있는 게임</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>고객 지원</h3>
+                <a href="#">자주 묻는 질문</a>
+                <a href="#">라이브 채팅</a>
+                <a href="#">이메일 지원</a>
+            </div>
+            
+            <div class="footer-section">
+                <h3>소셜 미디어</h3>
+                <a href="#">🐕 인스타그램</a>
+                <a href="#">🐾 트위터</a>
+                <a href="#">🦴 페이스북</a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 Puppy Casino. 모든 권리 보유. 🐕 18세 이상만 이용 가능합니다.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 효과음 함수
+        function playBark() {
+            // 실제로는 오디오 파일을 재생하겠지만, 여기서는 시각적 효과만
+            alert('🐕 멍멍! 환영합니다! 🎰');
+        }
+
+        // 게임 실행 함수
+        function playGame(gameType) {
+            const games = {
+                'slots': '🎰 멍멍 슬롯머신에 오신 것을 환영합니다! 🐕',
+                'blackjack': '🃏 퍼피 블랙잭 테이블로 안내합니다! 🐩',
+                'roulette': '🎯 도그 룰렛이 돌아갑니다! 🐕‍🦺',
+                'poker': '🎴 바우 포커 룸에 입장했습니다! 🦮'
+            };
+            
+            alert(games[gameType] || '게임을 준비 중입니다! 🐾');
+        }
+
+        // 반짝이는 효과 추가
+        function createSparkle() {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = ['✨', '⭐', '💫', '🌟'][Math.floor(Math.random() * 4)];
+            sparkle.style.top = Math.random() * 100 + '%';
+            sparkle.style.left = Math.random() * 100 + '%';
+            
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+                sparkle.remove();
+            }, 3000);
+        }
+
+        // 주기적으로 반짝이 효과 생성
+        setInterval(createSparkle, 2000);
+
+        // 스크롤 효과
+        window.addEventListener('scroll', () => {
+            const cards = document.querySelectorAll('.game-card, .bonus-card, .mascot');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    card.style.animation = 'fadeInUp 0.6s ease-out';
+                }
+            });
+        });
+
+        // 클릭 시 발자국 효과
+        document.addEventListener('click', (e) => {
+            const paw = document.createElement('div');
+            paw.textContent = '🐾';
+            paw.style.position = 'absolute';
+            paw.style.left = e.clientX + 'px';
+            paw.style.top = e.clientY + 'px';
+            paw.style.fontSize = '2rem';
+            paw.style.pointerEvents = 'none';
+            paw.style.animation = 'fadeOut 2s ease-out forwards';
+            
+            document.body.appendChild(paw);
+            
+            setTimeout(() => paw.remove(), 2000);
+        });
+
+        // CSS 애니메이션 추가
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(30px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; transform: scale(1); }
+                to { opacity: 0; transform: scale(0) rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

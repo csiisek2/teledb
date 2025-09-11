@@ -57,12 +57,32 @@ async def run_bot():
     await application.bot.delete_webhook(drop_pending_updates=True)
     logger.info("웹훅 삭제 완료 - 폴링 모드로 시작")
     
+    # 다른 인스턴스가 종료될 시간을 기다림
+    import asyncio
+    logger.info("다른 봇 인스턴스 종료 대기 중... (30초)")
+    await asyncio.sleep(30)
+    
     # 핸들러 설정
     setup_handlers(application)
     
-    # 봇 시작
+    # 봇 시작 (재시도 로직 포함)
     await application.start()
-    await application.updater.start_polling()
+    
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            await application.updater.start_polling()
+            logger.info("폴링 시작 성공!")
+            break
+        except Exception as e:
+            logger.error(f"폴링 시작 실패 (시도 {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                wait_time = 10 * (attempt + 1)
+                logger.info(f"{wait_time}초 후 재시도...")
+                await asyncio.sleep(wait_time)
+            else:
+                logger.error("폴링 시작 최종 실패")
+                raise
     
     logger.info("텔레그램 봇 폴링 시작 완료")
     

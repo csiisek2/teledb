@@ -70,36 +70,61 @@ def get_sqlite_connection():
 def init_database():
     """데이터베이스 테이블 초기화"""
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cursor:
-                
-                # 단순한 전화번호 정보 테이블 (중복 허용)
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS phone_data (
-                        id SERIAL PRIMARY KEY,
-                        phone_number VARCHAR(15) NOT NULL,
-                        content TEXT NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                
-                # 조회 로그 테이블 (단순화)
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS query_logs (
-                        id SERIAL PRIMARY KEY,
-                        user_id BIGINT,
-                        username VARCHAR(100),
-                        query_phone VARCHAR(15),
-                        results_count INTEGER DEFAULT 0,
-                        query_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                
-                # 인덱스 생성 (중복 허용)
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_phone ON phone_data(phone_number)')
-                
-                conn.commit()
-                logger.info("PostgreSQL 데이터베이스 테이블이 초기화되었습니다.")
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        # PostgreSQL과 SQLite 구분해서 테이블 생성
+        if 'sqlite' in str(type(conn)).lower():
+            # SQLite 버전 (SERIAL 대신 AUTOINCREMENT)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS phone_data (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    phone_number VARCHAR(15) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS query_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id BIGINT,
+                    username VARCHAR(100),
+                    query_phone VARCHAR(15),
+                    results_count INTEGER DEFAULT 0,
+                    query_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        else:
+            # PostgreSQL 버전
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS phone_data (
+                    id SERIAL PRIMARY KEY,
+                    phone_number VARCHAR(15) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS query_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    username VARCHAR(100),
+                    query_phone VARCHAR(15),
+                    results_count INTEGER DEFAULT 0,
+                    query_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+        
+        # 인덱스 생성 (공통)
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_phone ON phone_data(phone_number)')
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        logger.info("데이터베이스 테이블이 초기화되었습니다.")
     except Exception as e:
         logger.error(f"데이터베이스 초기화 오류: {e}")
         raise
@@ -139,16 +164,25 @@ def search_phone(phone_number: str) -> List[Dict]:
 def add_phone_data(phone_number: str, content: str) -> bool:
     """새 전화번호 정보 추가 (중복 허용)"""
     try:
-        with get_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute('''
-                    INSERT INTO phone_data (phone_number, content)
-                    VALUES (%s, %s)
-                ''', (phone_number, content.strip()))
-                
-                conn.commit()
-                logger.info(f"전화번호 {phone_number} 정보가 추가되었습니다.")
-                return True
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        if 'sqlite' in str(type(conn)).lower():
+            cursor.execute('''
+                INSERT INTO phone_data (phone_number, content)
+                VALUES (?, ?)
+            ''', (phone_number, content.strip()))
+        else:
+            cursor.execute('''
+                INSERT INTO phone_data (phone_number, content)
+                VALUES (%s, %s)
+            ''', (phone_number, content.strip()))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        logger.info(f"전화번호 {phone_number} 정보가 추가되었습니다.")
+        return True
     except Exception as e:
         logger.error(f"데이터 추가 중 오류: {e}")
         return False

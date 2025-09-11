@@ -18,14 +18,13 @@ admin_mode_users = set()
 # 허용된 슈퍼어드민 username (보안 강화)
 SUPER_ADMIN_USERNAME = "dis7414"  # 오직 이 username만 superadmin 사용 가능
 
-# 관리자가 허용한 사용자 목록 (동적 관리)
-approved_users = set()
-# 관리자 권한을 가진 사용자 목록
-admin_users = set()
+# 비밀번호 기반 인증 시스템
+ACCESS_PASSWORD = "09081!!"  # 봇 사용 비밀번호
+authenticated_users = set()  # 인증된 사용자 목록 (user_id로 저장)
 
-# dis7414는 자동으로 승인됨 (슈퍼어드민)
-approved_users.add("dis7414")
-admin_users.add("dis7414")
+# 관리자 모드용 (슈퍼어드민)
+SUPER_ADMIN_USER_ID = 5773319399  # dis7414의 user_id
+admin_users = {SUPER_ADMIN_USER_ID}
 
 # 사용자 승인 요청 명령어
 async def approve_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -318,20 +317,84 @@ logger = logging.getLogger(__name__)
 ADMIN_USER_ID = int(os.getenv('ADMIN_USER_ID', 0))
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """시작 명령어"""
+    """시작 명령어 - 비밀번호 인증"""
     user = update.effective_user
-    welcome_text = f"""🔍 **TeleDB - 전화번호 조회 시스템**
+    
+    # 이미 인증된 사용자인지 확인
+    if user.id in authenticated_users:
+        welcome_text = f"""✅ **이미 인증됨** - TeleDB 사용 가능!
 
 안녕하세요, {user.first_name}님!
 
 📱 **사용 방법:**
 • `01012345678` - 전화번호 바로 입력하여 조회
+• `/help` - 도움말 보기
 
 💡 **간편 조회**: 전화번호만 입력하면 바로 검색됩니다!"""
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+        await update.message.reply_text(welcome_text, parse_mode='Markdown')
+        return
+    
+    # 비밀번호가 제공되었는지 확인
+    if context.args:
+        password = ' '.join(context.args).strip()
+        if password == ACCESS_PASSWORD:
+            # 비밀번호 맞음 - 인증 완료
+            authenticated_users.add(user.id)
+            success_text = f"""🎉 **인증 성공!** 
+
+환영합니다, {user.first_name}님!
+
+🔍 **TeleDB - 전화번호 조회 시스템**
+📱 **사용 방법:**
+• `01012345678` - 전화번호 바로 입력하여 조회
+• `/help` - 상세 도움말 
+• `/stats` - 데이터베이스 통계
+
+💡 **간편 조회**: 전화번호만 입력하면 바로 검색 시작!
+
+🔒 인증 완료! 이제 모든 기능을 사용할 수 있습니다."""
+            await update.message.reply_text(success_text, parse_mode='Markdown')
+        else:
+            # 비밀번호 틀림
+            await update.message.reply_text(
+                "❌ **비밀번호가 틀렸습니다.**\n\n"
+                "🔐 올바른 비밀번호를 입력하세요.\n"
+                "📞 관리자에게 문의하여 비밀번호를 받으세요.",
+                parse_mode='Markdown'
+            )
+    else:
+        # 비밀번호 없이 /start만 입력됨
+        auth_text = f"""🔒 **TeleDB - 전화번호 조회 시스템**
+
+안녕하세요, {user.first_name}님!
+
+⚠️ **인증이 필요합니다.**
+
+🔐 **사용법:**
+`/start 비밀번호` 형태로 입력하세요.
+
+📞 **비밀번호 문의:**
+관리자(@dis7414)에게 문의하여 비밀번호를 받으세요.
+
+💡 **예시:** `/start ****`"""
+        await update.message.reply_text(auth_text, parse_mode='Markdown')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """도움말 명령어"""
+    user = update.effective_user
+    
+    # 비밀번호 인증 확인
+    if user.id not in authenticated_users:
+        await update.message.reply_text(
+            "🔒 **인증이 필요합니다.**\n\n"
+            "🔐 **사용법:**\n"
+            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
+            "📞 **비밀번호 문의:**\n"
+            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
+            parse_mode='Markdown'
+        )
+        return
+    
     help_text = """📖 **TeleDB 사용 가이드**
 
 🔍 **사용법:**
@@ -339,18 +402,26 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 📝 **형식:**
 • 하이픈 자동 제거: 010-1234-5678 → 01012345678  
-• 여러 정보가 있으면 모두 표시됩니다."""
+• 여러 정보가 있으면 모두 표시됩니다.
+
+📊 **추가 명령어:**
+• `/stats` - 데이터베이스 통계 보기
+
+🔒 **보안:** 모든 조회 메시지는 30초 후 자동 삭제됩니다."""
     await update.message.reply_text(help_text, parse_mode='Markdown')
 
 async def search_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """전화번호 조회 명령어 - 모든 매칭 결과 표시"""
     user = update.effective_user
     
-    # 사용자 허가 체크 (간소화)
-    if user.username not in approved_users and user.id not in approved_users:
+    # 비밀번호 인증 확인
+    if user.id not in authenticated_users:
         await update.message.reply_text(
-            "⛔ **허용된 사용자가 아닙니다.**\n\n"
-            "📞 관리자에게 문의하세요.",
+            "🔒 **인증이 필요합니다.**\n\n"
+            "🔐 **사용법:**\n"
+            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
+            "📞 **비밀번호 문의:**\n"
+            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
             parse_mode='Markdown'
         )
         return
@@ -401,11 +472,14 @@ async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """통계 명령어"""
     user = update.effective_user
     
-    # 사용자 허가 체크 (간소화)
-    if user.username not in approved_users and user.id not in approved_users:
+    # 비밀번호 인증 확인
+    if user.id not in authenticated_users:
         await update.message.reply_text(
-            "⛔ **허용된 사용자가 아닙니다.**\n\n"
-            "📞 관리자에게 문의하세요.",
+            "🔒 **인증이 필요합니다.**\n\n"
+            "🔐 **사용법:**\n"
+            "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
+            "📞 **비밀번호 문의:**\n"
+            "관리자(@dis7414)에게 비밀번호를 문의하세요.",
             parse_mode='Markdown'
         )
         return
@@ -657,11 +731,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_valid = validate_phone_number(cleaned_phone)
     
     if is_valid:
-        # 사용자 허가 체크 (간소화)
-        if user.username not in approved_users and user.id not in approved_users:
+        # 비밀번호 인증 확인
+        if user.id not in authenticated_users:
             await update.message.reply_text(
-                "⛔ **허용된 사용자가 아닙니다.**\n\n"
-                "📞 관리자에게 문의하세요.",
+                "🔒 **인증이 필요합니다.**\n\n"
+                "🔐 **사용법:**\n"
+                "`/start 비밀번호` 명령어로 먼저 인증하세요.\n\n"
+                "📞 **비밀번호 문의:**\n"
+                "관리자(@dis7414)에게 비밀번호를 문의하세요.",
                 parse_mode='Markdown'
             )
             return
