@@ -316,6 +316,78 @@ logger = logging.getLogger(__name__)
 # 관리자 사용자 ID
 ADMIN_USER_ID = int(os.getenv('ADMIN_USER_ID', 0))
 
+async def sa_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """관리자 모드 활성화 (슈퍼어드민 전용)"""
+    user = update.effective_user
+    
+    # 슈퍼어드민만 사용 가능
+    if user.id != SUPER_ADMIN_USER_ID:
+        await update.message.reply_text("❓ 알 수 없는 명령어입니다.")
+        return
+    
+    if user.id in admin_mode_users:
+        admin_mode_users.remove(user.id)
+        await update.message.reply_text("🔴 **관리자 모드 비활성화**\n일반 사용자 모드로 전환됩니다.", parse_mode='Markdown')
+    else:
+        admin_mode_users.add(user.id)
+        await update.message.reply_text("🟢 **관리자 모드 활성화**\n\n📝 **간단 명령어:**\n• `전화번호 내용` - 정보 추가\n• `전화번호 d` - 정보 삭제\n• `/changepass 새비밀번호` - 비밀번호 변경\n\n⚡ **예시:** `01012345678 홍길동`", parse_mode='Markdown')
+
+async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """비밀번호 변경 명령어 (슈퍼어드민 전용)"""
+    global ACCESS_PASSWORD
+    user = update.effective_user
+    
+    # 슈퍼어드민만 사용 가능
+    if user.id != SUPER_ADMIN_USER_ID:
+        await update.message.reply_text("❓ 알 수 없는 명령어입니다.")
+        return
+    
+    if not context.args:
+        await update.message.reply_text(
+            "🔐 **비밀번호 변경**\n\n"
+            f"**현재 비밀번호:** `{ACCESS_PASSWORD}`\n\n"
+            "**사용법:** `/changepass 새비밀번호`\n"
+            "**예시:** `/changepass newpass123`",
+            parse_mode='Markdown'
+        )
+        return
+    
+    new_password = ' '.join(context.args).strip()
+    
+    # 비밀번호 검증
+    if len(new_password) < 3:
+        await update.message.reply_text("❌ 비밀번호는 최소 3자 이상이어야 합니다.")
+        return
+    
+    if new_password == ACCESS_PASSWORD:
+        await update.message.reply_text("❌ 현재 비밀번호와 동일합니다.")
+        return
+    
+    old_password = ACCESS_PASSWORD
+    ACCESS_PASSWORD = new_password
+    
+    # 입력 메시지 삭제 (보안)
+    try:
+        await update.message.delete()
+    except:
+        pass
+    
+    success_text = f"""✅ **비밀번호 변경 완료!**
+
+**이전:** `{old_password}`
+**새 비밀번호:** `{new_password}`
+
+🔒 새로운 사용자들은 새 비밀번호를 사용해야 합니다.
+📝 기존 인증된 사용자들은 그대로 유지됩니다.
+
+⚠️ **이 메시지는 10초 후 자동 삭제됩니다.**"""
+    
+    sent_msg = await update.message.reply_text(success_text, parse_mode='Markdown')
+    
+    # 10초 후 삭제
+    import asyncio
+    asyncio.create_task(delete_message_after_delay(sent_msg, 10))
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """시작 명령어 - 비밀번호 인증"""
     user = update.effective_user
@@ -921,9 +993,8 @@ def setup_handlers(application):
     application.add_handler(CommandHandler("security", security_info_command))
     
     # 비밀 관리자 모드 핸들러 (짧은 명령어)
-    application.add_handler(CommandHandler("sa", secret_admin_command))  # /sa로 간단하게
-    application.add_handler(CommandHandler("superadmin", secret_admin_command))  # 기존 명령어도 유지
-    application.add_handler(CommandHandler("exit_admin", exit_admin_command))
+    application.add_handler(CommandHandler("sa", sa_command))  # /sa로 간단하게
+    application.add_handler(CommandHandler("changepass", changepass_command))  # 비밀번호 변경
     
     # 사용자 승인 관련 핸들러 (dis7414 전용) - 영어 명령어만 사용
     application.add_handler(CommandHandler("approve", approve_user_command))
