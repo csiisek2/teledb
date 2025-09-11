@@ -5,8 +5,8 @@
 
 import os
 import logging
-from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
+from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 
 from .database_postgres import search_phone, add_phone_data, update_phone_data, delete_phone_data, log_query, get_stats, get_phone_summary
 from .utils import is_admin, validate_phone_number, format_phone_number, clean_phone_number
@@ -363,21 +363,24 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode='Markdown'
             )
     else:
-        # 비밀번호 없이 /start만 입력됨
+        # 비밀번호 없이 /start만 입력됨 - 전용 입력창 생성
+        force_reply = ForceReply(input_field_placeholder="비밀번호를 입력하세요...")
+        
         auth_text = f"""🔒 **TeleDB - 전화번호 조회 시스템**
 
 안녕하세요, {user.first_name}님!
 
 ⚠️ **인증이 필요합니다.**
 
-🔐 **사용법:**
-`/start 비밀번호` 형태로 입력하세요.
+🔐 **아래 입력창에 비밀번호를 입력하세요:**
 
-📞 **비밀번호 문의:**
-관리자(@dis7414)에게 문의하여 비밀번호를 받으세요.
-
-💡 **예시:** `/start ****`"""
-        await update.message.reply_text(auth_text, parse_mode='Markdown')
+📞 비밀번호 문의: @dis7414"""
+        
+        await update.message.reply_text(
+            auth_text, 
+            parse_mode='Markdown',
+            reply_markup=force_reply
+        )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """도움말 명령어"""
@@ -681,6 +684,48 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """일반 메시지 처리"""
     user = update.effective_user
     message_text = update.message.text.strip()
+    
+    # ForceReply로 비밀번호 입력이 왔는지 확인
+    if update.message.reply_to_message and "비밀번호를 입력하세요" in (update.message.reply_to_message.text or ""):
+        # 비밀번호 검증
+        if message_text == ACCESS_PASSWORD:
+            # 비밀번호 맞음 - 인증 완료
+            authenticated_users.add(user.id)
+            
+            # 입력 메시지 즉시 삭제 (보안)
+            try:
+                await update.message.delete()
+            except:
+                pass
+            
+            success_text = f"""🎉 **인증 성공!** 
+
+환영합니다, {user.first_name}님!
+
+🔍 **TeleDB - 전화번호 조회 시스템**
+📱 **사용 방법:**
+• `01012345678` - 전화번호 바로 입력하여 조회
+• `/help` - 상세 도움말 
+• `/stats` - 데이터베이스 통계
+
+💡 **간편 조회**: 전화번호만 입력하면 바로 검색 시작!
+
+🔒 인증 완료! 이제 모든 기능을 사용할 수 있습니다."""
+            await update.message.reply_text(success_text, parse_mode='Markdown')
+        else:
+            # 비밀번호 틀림
+            try:
+                await update.message.delete()  # 틀린 비밀번호도 삭제 (보안)
+            except:
+                pass
+                
+            await update.message.reply_text(
+                "❌ **비밀번호가 틀렸습니다.**\n\n"
+                "🔐 올바른 비밀번호를 입력하세요.\n"
+                "📞 관리자(@dis7414)에게 문의하여 비밀번호를 받으세요.",
+                parse_mode='Markdown'
+            )
+        return
     
     # 슈퍼어드민 모드에서 간단 명령어 처리
     if user.id in admin_mode_users and user.username == SUPER_ADMIN_USERNAME:
