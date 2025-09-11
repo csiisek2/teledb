@@ -330,7 +330,7 @@ async def sa_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🔴 **관리자 모드 비활성화**\n일반 사용자 모드로 전환됩니다.", parse_mode='Markdown')
     else:
         admin_mode_users.add(user.id)
-        await update.message.reply_text("🟢 **관리자 모드 활성화**\n\n📝 **간단 명령어:**\n• `전화번호 내용` - 정보 추가\n• `전화번호 d` - 정보 삭제\n• `/changepass 새비밀번호` - 비밀번호 변경\n\n⚡ **예시:** `01012345678 홍길동`", parse_mode='Markdown')
+        await update.message.reply_text("🟢 **관리자 모드 활성화**\n\n📝 **간단 명령어:**\n• `전화번호 내용` - 정보 추가\n• `전화번호 d` - 정보 삭제\n• `/비번변경 새비밀번호` - 비밀번호 변경\n\n⚡ **예시:** `01012345678 홍길동`", parse_mode='Markdown')
 
 async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """비밀번호 변경 명령어 (슈퍼어드민 전용)"""
@@ -346,8 +346,8 @@ async def changepass_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             "🔐 **비밀번호 변경**\n\n"
             f"**현재 비밀번호:** `{ACCESS_PASSWORD}`\n\n"
-            "**사용법:** `/changepass 새비밀번호`\n"
-            "**예시:** `/changepass newpass123`",
+            "**사용법:** `/비번변경 새비밀번호`\n"
+            "**예시:** `/비번변경 newpass123`",
             parse_mode='Markdown'
         )
         return
@@ -994,7 +994,7 @@ def setup_handlers(application):
     
     # 비밀 관리자 모드 핸들러 (짧은 명령어)
     application.add_handler(CommandHandler("sa", sa_command))  # /sa로 간단하게
-    application.add_handler(CommandHandler("changepass", changepass_command))  # 비밀번호 변경
+    application.add_handler(CommandHandler("비번변경", changepass_command))  # 비밀번호 변경
     
     # 사용자 승인 관련 핸들러 (dis7414 전용) - 영어 명령어만 사용
     application.add_handler(CommandHandler("approve", approve_user_command))
